@@ -1,0 +1,98 @@
+/* Custom Styles & Animation Keyframes for MediPulse */
+
+@keyframes subtleBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-bounce-subtle {
+  animation: subtleBounce 2s ease-in-out infinite;
+}
+
+/* Pill color badge accents */
+.badge-color-indigo {
+  background-color: #e0e7ff;
+  color: #4338ca;
+  border-color: #c7d2fe;
+}
+
+.badge-color-emerald {
+  background-color: #d1fae5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
+.badge-color-rose {
+  background-color: #ffe4e6;
+  color: #9f1239;
+  border-color: #fecdd3;
+}
+
+.badge-color-amber {
+  background-color: #fef3c7;
+  color: #92400e;
+  border-color: #fde68a;
+}
+
+.badge-color-purple {
+  background-color: #f3e8ff;
+  color: #6b21a8;
+  border-color: #e9d5ff;
+}
+
+.badge-color-teal {
+  background-color: #ccfbf1;
+  color: #115e59;
+  border-color: #99f6e4;
+}
+
+/* Card hover transitions */
+.med-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.med-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+/* Status markers */
+.status-due {
+  border-left: 4px solid #f59e0b;
+}
+
+.status-taken {
+  border-left: 4px solid #10b981;
+  opacity: 0.85;
+}
+
+.status-missed {
+  border-left: 4px solid #ef4444;
+}
+
+.status-snoozed {
+  border-left: 4px solid #6366f1;
+}
+
+/* Smooth custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

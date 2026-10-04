@@ -1,0 +1,222 @@
+{
+  "medications": [
+    {
+      "id": "med_1",
+      "name": "Metformin",
+      "dosage": "500 mg",
+      "form": "Tablet",
+      "color": "indigo",
+      "foodCondition": "With Food",
+      "times": [
+        "08:30",
+        "19:30"
+      ],
+      "stock": 26,
+      "lowThreshold": 10,
+      "notes": "Take immediately with main meals to reduce GI sensitivity."
+    },
+    {
+      "id": "med_2",
+      "name": "Lisinopril",
+      "dosage": "10 mg",
+      "form": "Tablet",
+      "color": "emerald",
+      "foodCondition": "Before Food",
+      "times": [
+        "09:00"
+      ],
+      "stock": 31,
+      "lowThreshold": 7,
+      "notes": "Blood pressure management. Take consistently every morning."
+    },
+    {
+      "id": "med_3",
+      "name": "Vitamin D3",
+      "dosage": "2000 IU",
+      "form": "Capsule",
+      "color": "amber",
+      "foodCondition": "With Food",
+      "times": [
+        "13:00"
+      ],
+      "stock": 30,
+      "lowThreshold": 5,
+      "notes": "Fat-soluble vitamin. Best absorbed with healthy dietary fats."
+    },
+    {
+      "id": "med_4",
+      "name": "Atorvastatin",
+      "dosage": "20 mg",
+      "form": "Tablet",
+      "color": "purple",
+      "foodCondition": "After Food",
+      "times": [
+        "21:30"
+      ],
+      "stock": 18,
+      "lowThreshold": 7,
+      "notes": "Take at bedtime. Avoid drinking grapefruit juice."
+    }
+  ],
+  "logs": [
+    {
+      "id": "log_384lawlek",
+      "medId": "med_3",
+      "medName": "Vitamin D3",
+      "dosage": "2000 IU",
+      "scheduledTime": "13:00",
+      "date": "2026-10-03",
+      "timestamp": "2026-10-03 18:57:23",
+      "status": "taken",
+      "notes": ""
+    },
+    {
+      "id": "log_ylw2milm0",
+      "medId": "med_3",
+      "medName": "Vitamin D3",
+      "dosage": "2000 IU",
+      "scheduledTime": "13:00",
+      "date": "2026-10-03",
+      "timestamp": "2026-10-03 18:57:23",
+      "status": "taken",
+      "notes": ""
+    },
+    {
+      "id": "log_bs6qxq236",
+      "medId": "med_3",
+      "medName": "Vitamin D3",
+      "dosage": "2000 IU",
+      "scheduledTime": "13:00",
+      "date": "2026-10-03",
+      "timestamp": "2026-10-03 18:57:23",
+      "status": "taken",
+      "notes": ""
+    },
+    {
+      "id": "log_j686buf11",
+      "medId": "med_2",
+      "medName": "Lisinopril",
+      "dosage": "10 mg",
+      "scheduledTime": "09:00",
+      "date": "2026-10-03",
+      "timestamp": "2026-10-03 18:57:22",
+      "status": "taken",
+      "notes": ""
+    },
+    {
+      "id": "log_d69gdedhh",
+      "medId": "med_2",
+      "medName": "Lisinopril",
+      "dosage": "10 mg",
+      "scheduledTime": "09:00",
+      "date": "2026-10-03",
+      "timestamp": "2026-10-03 18:57:22",
+      "status": "taken",
+      "notes": ""
+    },
+    {
+      "id": "log_3m8osysu1",
+      "medId": "med_2",
+      "medName": "Lisinopril",
+      "dosage": "10 mg",
+      "scheduledTime": "09:00",
+      "date": "2026-10-03",
+      "timestamp": "2026-10-03 18:57:22",
+      "status": "taken",
+      "notes": ""
+    },
+    {
+      "id": "log_x1080akeb",
+      "medId": "med_1",
+      "medName": "Metformin",
+      "dosage": "500 mg",
+      "scheduledTime": "08:30",
+      "date": "2026-10-03",
+      "timestamp": "2026-10-03 18:57:20",
+      "status": "taken",
+      "notes": ""
+    },
+    {
+      "id": "log_f5wy3c000",
+      "medId": "med_4",
+      "medName": "Atorvastatin",
+      "dosage": "20 mg",
+      "scheduledTime": "21:30",
+      "date": "2026-10-03",
+      "timestamp": "2026-10-03 18:57:19",
+      "status": "taken",
+      "notes": ""
+    },
+    {
+      "id": "log_o4mymnylj",
+      "medId": "med_4",
+      "medName": "Atorvastatin",
+      "dosage": "20 mg",
+      "scheduledTime": "21:30",
+      "date": "2026-10-03",
+      "timestamp": "2026-10-03 18:57:19",
+      "status": "taken",
+      "notes": ""
+    },
+    {
+      "id": "log_pcjgsg5r0",
+      "medId": "med_4",
+      "medName": "Atorvastatin",
+      "dosage": "20 mg",
+      "scheduledTime": "21:30",
+      "date": "2026-10-03",
+      "timestamp": "2026-10-03 18:57:19",
+      "status": "taken",
+      "notes": ""
+    },
+    {
+      "id": "log_kmgr6qyjr",
+      "medId": "med_4",
+      "medName": "Atorvastatin",
+      "dosage": "20 mg",
+      "scheduledTime": "21:30",
+      "date": "2026-10-03",
+      "timestamp": "2026-10-03 18:57:19",
+      "status": "taken",
+      "notes": ""
+    },
+    {
+      "id": "log_y23n0kc5u",
+      "medId": "med_1",
+      "medName": "Metformin",
+      "dosage": "500 mg",
+      "scheduledTime": "19:30",
+      "date": "2026-10-03",
+      "timestamp": "2026-10-03 18:57:17",
+      "status": "taken",
+      "notes": ""
+    },
+    {
+      "id": "seed_1",
+      "medId": "med_1",
+      "medName": "Metformin",
+      "dosage": "500 mg",
+      "scheduledTime": "08:30",
+      "date": "2026-10-02",
+      "timestamp": "2026-10-02 08:34:00",
+      "status": "taken",
+      "notes": "Taken with breakfast"
+    },
+    {
+      "id": "seed_2",
+      "medId": "med_2",
+      "medName": "Lisinopril",
+      "dosage": "10 mg",
+      "scheduledTime": "09:00",
+      "date": "2026-10-02",
+      "timestamp": "2026-10-02 09:02:11",
+      "status": "taken",
+      "notes": ""
+    }
+  ],
+  "settings": {
+    "soundTone": "chime",
+    "snoozeMinutes": 10,
+    "caregiverContact": "+1 (555) 234-8790 (Dr. Evelyn Reed)"
+  }
+}

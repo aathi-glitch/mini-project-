@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediPulse - Smart Medicine Reminder & Tracker</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Canvas Confetti for celebratory adherence streaks -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            medical: {
+              teal: '#0d9488',
+              emerald: '#059669',
+              rose: '#e11d48',
+              amber: '#d97706',
+              sky: '#0284c7'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col font-sans transition-colors duration-200">
+
+  <!-- Active Alarm Modal Overlay (Appears when a medication is due) -->
+  <div id="alarmOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 text-center transform transition-all animate-bounce-subtle border-4 border-amber-400">
+      <div class="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4 text-amber-600 animate-pulse">
+        <i data-lucide="bell-ring" class="w-10 h-10"></i>
+      </div>
+      <span class="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full uppercase tracking-wider mb-2">
+        Medication Due Right Now
+      </span>
+      <h2 id="alarmMedName" class="text-2xl font-black text-slate-900">Paracetamol</h2>
+      <p id="alarmMedDetails" class="text-sm text-slate-600 mt-1 mb-4">500mg • 1 Tablet • With Food</p>
+      
+      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 text-left text-xs space-y-1 text-slate-600">
+        <div class="flex justify-between">
+          <span class="text-slate-400">Scheduled for:</span>
+          <span id="alarmMedTime" class="font-bold text-slate-800">14:00</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Instructions:</span>
+          <span id="alarmMedNotes" class="font-medium text-slate-800">Take after lunch with full glass of water</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Remaining Stock:</span>
+          <span id="alarmMedStock" class="font-bold text-medical-emerald">14 pills left</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <button id="btnAlarmTake" class="col-span-2 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 transition-all transform active:scale-95">
+          <i data-lucide="check-circle" class="w-5 h-5"></i>
+          Mark as Taken
+        </button>
+        <button id="btnAlarmSnooze" class="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-all text-sm">
+          <i data-lucide="clock" class="w-4 h-4"></i>
+          Snooze 10m
+        </button>
+        <button id="btnAlarmSkip" class="py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-all text-sm">
+          <i data-lucide="x" class="w-4 h-4"></i>
+          Skip Dose
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header Navigation -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-indigo-100">
+          <i data-lucide="pill" class="w-6 h-6"></i>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-black text-xl tracking-tight bg-gradient-to-r from-indigo-600 to-teal-500 bg-clip-text text-transparent">MediPulse</span>
+          <span class="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md font-medium border border-indigo-100">Smart Tracker</span>
+          <div id="backendBadge" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-500 border border-slate-200">
+            <span id="backendStatusDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+            <span id="backendBadgeText">Checking Backend...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Real-Time Clock & Alarm Status Indicator -->
+      <div class="hidden sm:flex items-center gap-4">
+        <div class="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700">
+          <i data-lucide="clock" class="w-4 h-4 text-indigo-600"></i>
+          <span id="liveClock" class="font-mono font-semibold text-sm">--:--:--</span>
+        </div>
+
+        <button id="btnSoundTest" title="Test Alert Sound" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl transition">
+          <i data-lucide="volume-2" class="w-4 h-4 text-indigo-500"></i>
+          <span>Sound Check</span>
+        </button>
+
+        <button id="btnToggleNotifications" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition">
+          <i data-lucide="bell" class="w-4 h-4 text-amber-500"></i>
+          <span id="notifStatusText">Enable Alerts</span>
+        </button>
+      </div>
+
+      <!-- Quick Action Button -->
+      <div>
+        <button id="btnOpenAddModal" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-medium shadow-sm hover:shadow transition transform active:scale-95 text-sm">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Add Medicine</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 sm:space-x-4 border-t border-slate-100 overflow-x-auto">
+      <button class="nav-tab active-tab flex items-center gap-2 py-3 px-3 text-sm font-semibold border-b-2 border-indigo-600 text-indigo-600 transition" data-tab="tab-today">
+        <i data-lucide="calendar-check" class="w-4 h-4"></i>
+        <span>Today's Schedule</span>
+        <span id="badgePendingCount" class="ml-1 px-1.5 py-0.2 bg-amber-100 text-amber-800 text-xs rounded-full font-bold">0</span>
+      </button>
+      <button class="nav-tab flex items-center gap-2 py-3 px-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition" data-tab="tab-inventory">
+        <i data-lucide="package" class="w-4 h-4"></i>
+        <span>Cabinet & Stock</span>
+        <span id="badgeLowStockCount" class="ml-1 px-1.5 py-0.2 bg-rose-100 text-rose-800 text-xs rounded-full font-bold hidden">0</span>
+      </button>
+      <button class="nav-tab flex items-center gap-2 py-3 px-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition" data-tab="tab-analytics">
+        <i data-lucide="trending-up" class="w-4 h-4"></i>
+        <span>Adherence & Logs</span>
+      </button>
+      <button class="nav-tab flex items-center gap-2 py-3 px-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition" data-tab="tab-ai-helper">
+        <i data-lucide="sparkles" class="w-4 h-4 text-purple-500"></i>
+        <span>AI Safety & Interactions</span>
+      </button>
+      <button class="nav-tab flex items-center gap-2 py-3 px-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition" data-tab="tab-settings">
+        <i data-lucide="sliders" class="w-4 h-4"></i>
+        <span>Settings & Backup</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+
+    <!-- Top Banner: Next Dose Countdown -->
+    <div id="nextDoseBanner" class="mb-6 bg-gradient-to-r from-indigo-700 via-indigo-600 to-teal-600 rounded-3xl p-5 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden">
+      <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="flex items-center gap-4 z-10">
+        <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shrink-0">
+          <i data-lucide="alarm-clock" class="w-8 h-8"></i>
+        </div>
+        <div>
+          <span class="text-xs uppercase tracking-wider font-semibold text-indigo-200">Up Next Today</span>
+          <h2 id="nextDoseTitle" class="text-xl font-bold">No upcoming doses</h2>
+          <p id="nextDoseDetails" class="text-xs text-indigo-100">All planned medications for today are completed!</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end z-10">
+        <div class="text-left md:text-right">
+          <span class="text-xs text-indigo-200 block">Due In</span>
+          <span id="nextDoseCountdown" class="text-2xl font-black font-mono">--:--:--</span>
+        </div>
+        <button id="btnQuickTakeNext" class="hidden px-4 py-2.5 bg-white text-indigo-800 hover:bg-indigo-50 font-bold rounded-xl text-sm shadow-md transition transform active:scale-95 flex items-center gap-1.5">
+          <i data-lucide="check" class="w-4 h-4"></i> Take Now
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 1: TODAY'S SCHEDULE -->
+    <section id="tab-today" class="tab-pane">
+      <!-- Quick Stats Row -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+            <i data-lucide="layers" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <span class="text-xs text-slate-400 font-medium">Scheduled</span>
+            <p id="statTotalDoses" class="text-lg font-bold text-slate-800">0</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+            <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <span class="text-xs text-slate-400 font-medium">Completed</span>
+            <p id="statTakenDoses" class="text-lg font-bold text-slate-800">0</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+            <i data-lucide="clock-4" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <span class="text-xs text-slate-400 font-medium">Pending</span>
+            <p id="statPendingDoses" class="text-lg font-bold text-slate-800">0</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+            <i data-lucide="award" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <span class="text-xs text-slate-400 font-medium">Current Streak</span>
+            <p id="statStreakDays" class="text-lg font-bold text-slate-800">0 Days</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline Schedule Sections: Morning, Afternoon, Evening, Night -->
+      <div class="space-y-6">
+        <!-- Morning Slot (05:00 - 11:59) -->
+        <div class="schedule-section">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+            <h3 class="text-md font-bold text-slate-700">Morning (5:00 AM - 12:00 PM)</h3>
+          </div>
+          <div id="slot-morning" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Dynamic Morning Dose Cards -->
+          </div>
+        </div>
+
+        <!-- Afternoon Slot (12:00 - 16:59) -->
+        <div class="schedule-section">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-3 h-3 rounded-full bg-orange-400"></span>
+            <h3 class="text-md font-bold text-slate-700">Afternoon (12:00 PM - 5:00 PM)</h3>
+          </div>
+          <div id="slot-afternoon" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Dynamic Afternoon Dose Cards -->
+          </div>
+        </div>
+
+        <!-- Evening Slot (17:00 - 20:59) -->
+        <div class="schedule-section">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-3 h-3 rounded-full bg-indigo-400"></span>
+            <h3 class="text-md font-bold text-slate-700">Evening (5:00 PM - 9:00 PM)</h3>
+          </div>
+          <div id="slot-evening" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Dynamic Evening Dose Cards -->
+          </div>
+        </div>
+
+        <!-- Bedtime / Night Slot (21:00 - 04:59) -->
+        <div class="schedule-section">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-3 h-3 rounded-full bg-slate-700"></span>
+            <h3 class="text-md font-bold text-slate-700">Bedtime & Night (9:00 PM - 5:00 AM)</h3>
+          </div>
+          <div id="slot-night" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Dynamic Night Dose Cards -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: MEDICINE CABINET & INVENTORY -->
+    <section id="tab-inventory" class="tab-pane hidden">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-xl font-bold text-slate-800">Medicine Cabinet & Stock Manager</h2>
+          <p class="text-xs text-slate-500">Track all prescriptions, remaining pill counts, and refill thresholds</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <input type="text" id="inventorySearch" placeholder="Search medicines..." class="px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+          <button id="btnOpenAddModal2" class="px-3.5 py-2 text-sm font-semibold bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 flex items-center gap-1.5 transition">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add Medicine
+          </button>
+        </div>
+      </div>
+
+      <!-- Inventory Cards Grid -->
+      <div id="inventoryGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Rendered by app.js -->
+      </div>
+    </section>
+
+    <!-- TAB 3: ADHERENCE & LOGS -->
+    <section id="tab-analytics" class="tab-pane hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- Adherence Score Card -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-bold text-slate-800 text-base">Overall Adherence Score</h3>
+              <span id="scoreBadge" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">Excellent</span>
+            </div>
+            <div class="flex items-baseline gap-2 mb-2">
+              <span id="adherencePercent" class="text-5xl font-black text-indigo-600">100%</span>
+              <span class="text-xs text-slate-400">compliance rate</span>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">Calculated based on past scheduled doses taken on time.</p>
+          </div>
+
+          <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+            <div id="adherenceProgressBar" class="bg-gradient-to-r from-teal-500 to-indigo-600 h-3 rounded-full transition-all duration-500" style="width: 100%"></div>
+          </div>
+        </div>
+
+        <!-- 7-Day Adherence Visual Dots -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm lg:col-span-2">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-slate-800 text-base">Last 7 Days Compliance</h3>
+            <span class="text-xs text-slate-400">Daily completion status</span>
+          </div>
+          <div id="weeklyHistoryRow" class="grid grid-cols-7 gap-2 text-center">
+            <!-- Injected by app.js -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Full History Log Table -->
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-slate-800 text-base">Dose History Logs</h3>
+          <button id="btnClearLogs" class="text-xs text-slate-400 hover:text-rose-600 transition">Clear Log History</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="text-xs text-slate-400 uppercase bg-slate-50 border-b border-slate-100">
+              <tr>
+                <th class="py-3 px-4">Timestamp</th>
+                <th class="py-3 px-4">Medicine</th>
+                <th class="py-3 px-4">Scheduled For</th>
+                <th class="py-3 px-4">Action</th>
+                <th class="py-3 px-4">Notes</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody" class="divide-y divide-slate-100">
+              <!-- Injected by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: AI HEALTH & INTERACTION ASSISTANT -->
+    <section id="tab-ai-helper" class="tab-pane hidden">
+      <div class="bg-gradient-to-br from-indigo-900 via-slate-900 to-purple-950 text-white rounded-3xl p-6 mb-6 shadow-xl">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-xs font-semibold mb-2 border border-purple-500/30">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Smart Health Intelligence
+            </div>
+            <h2 class="text-2xl font-bold">Drug Safety & Interaction Checker</h2>
+            <p class="text-sm text-slate-300 mt-1 max-w-2xl">
+              Understand how your medications interact with foods, drinks, and each other. Get tips on optimal timing, side effects, and safe storage.
+            </p>
+          </div>
+          <button id="btnRunSafetyScan" class="px-4 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold rounded-2xl shadow-lg transition text-sm flex items-center gap-2">
+            <i data-lucide="shield-check" class="w-4 h-4"></i> Run Interaction Audit
+          </button>
+        </div>
+      </div>
+
+      <!-- Interaction Results Container -->
+      <div id="aiInteractionResults" class="space-y-4 mb-6">
+        <!-- Injected via app.js -->
+      </div>
+
+      <!-- Quick Knowledge Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+            <i data-lucide="utensils" class="w-5 h-5"></i>
+          </div>
+          <h4 class="font-bold text-slate-800 text-sm mb-1">Food & Beverage Warnings</h4>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Grapefruit juice, dairy, and alcohol can significantly alter how your liver metabolizes statins, antibiotics, and sedatives.
+          </p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
+            <i data-lucide="timer" class="w-5 h-5"></i>
+          </div>
+          <h4 class="font-bold text-slate-800 text-sm mb-1">Timing Consistency</h4>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Blood pressure drugs and thyroid hormone (Levothyroxine) are best taken at consistent times daily on an empty stomach for maximum bioavailability.
+          </p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center mb-3">
+            <i data-lucide="thermometer" class="w-5 h-5"></i>
+          </div>
+          <h4 class="font-bold text-slate-800 text-sm mb-1">Safe Storage</h4>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Avoid humid bathrooms. Store pills in a cool, dark cabinet under 25°C (77°F). Liquid antibiotics often require refrigeration.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: SETTINGS & BACKUP -->
+    <section id="tab-settings" class="tab-pane hidden">
+      <div class="max-w-2xl bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6">
+        <div>
+          <h2 class="text-xl font-bold text-slate-800">Application Settings</h2>
+          <p class="text-xs text-slate-500">Configure reminder sounds, notification behaviors, and emergency info</p>
+        </div>
+
+        <div class="border-t border-slate-100 pt-4 space-y-4">
+          <!-- Alarm Ringtone Selection -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Alarm Chime Tone</label>
+            <select id="settingSoundTone" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500">
+              <option value="chime">Calm Melodic Chime (Recommended)</option>
+              <option value="beep">Digital High Beep</option>
+              <option value="urgent">Urgent Double Pulse</option>
+              <option value="zen">Zen Temple Bell</option>
+            </select>
+          </div>
+
+          <!-- Snooze Duration -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Default Snooze Interval</label>
+            <select id="settingSnoozeMinutes" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500">
+              <option value="5">5 Minutes</option>
+              <option value="10" selected>10 Minutes</option>
+              <option value="15">15 Minutes</option>
+              <option value="30">30 Minutes</option>
+            </select>
+          </div>
+
+          <!-- Caregiver / Emergency Contact -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Caregiver / Doctor Emergency Phone</label>
+            <input type="text" id="settingCaregiverContact" placeholder="+1 (555) 019-2834 (Dr. Smith)" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <!-- Data Backup & Reset -->
+          <div class="border-t border-slate-100 pt-4">
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-3">Backup & Data Management</label>
+            <div class="flex flex-wrap gap-3">
+              <button id="btnExportData" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl flex items-center gap-1.5 transition">
+                <i data-lucide="download" class="w-4 h-4"></i> Export Data (JSON)
+              </button>
+              <label class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl flex items-center gap-1.5 transition cursor-pointer">
+                <i data-lucide="upload" class="w-4 h-4"></i> Import Data
+                <input type="file" id="fileImportData" accept=".json" class="hidden" />
+              </label>
+              <button id="btnLoadDemoData" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl flex items-center gap-1.5 transition">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i> Reload Demo Prescriptions
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ADD / EDIT MEDICATION MODAL -->
+  <div id="modalAddMed" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 transition-all">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+        <div>
+          <h3 id="modalMedTitle" class="text-lg font-black text-slate-800">Add New Medication</h3>
+          <p class="text-xs text-slate-400">Configure schedules, dosage instructions, and pill stock</p>
+        </div>
+        <button id="btnCloseMedModal" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="formMedication" class="space-y-4">
+        <input type="hidden" id="medId" value="" />
+
+        <!-- Name & Dosage -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Medication Name *</label>
+            <input type="text" id="medName" required placeholder="e.g. Amoxicillin" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Dosage / Strength *</label>
+            <input type="text" id="medDosage" required placeholder="e.g. 500mg, 1 tablet" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <!-- Pill Type & Visual Color -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Form</label>
+            <select id="medForm" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              <option value="Tablet">Tablet</option>
+              <option value="Capsule">Capsule</option>
+              <option value="Liquid / Syrup">Liquid / Syrup</option>
+              <option value="Injection">Injection</option>
+              <option value="Inhaler">Inhaler</option>
+              <option value="Drops">Drops</option>
+              <option value="Cream / Ointment">Cream</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Color Tag</label>
+            <select id="medColor" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              <option value="indigo">Indigo Blue</option>
+              <option value="emerald">Emerald Green</option>
+              <option value="rose">Rose Red</option>
+              <option value="amber">Amber Yellow</option>
+              <option value="purple">Purple</option>
+              <option value="teal">Teal</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Food / Intake Condition -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Food Instruction</label>
+          <select id="medFoodCondition" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <option value="With Food">Take with food (meals)</option>
+            <option value="Before Food">Take before food (empty stomach, 30m prior)</option>
+            <option value="After Food">Take after food</option>
+            <option value="No Restriction">No food restrictions</option>
+          </select>
+        </div>
+
+        <!-- Schedule Times -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-bold text-slate-700 uppercase">Daily Alarm Times *</label>
+            <button type="button" id="btnAddTimeSlot" class="text-xs text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1">
+              <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Add Time
+            </button>
+          </div>
+          <div id="timeSlotsContainer" class="space-y-2">
+            <!-- Dynamic time input rows -->
+          </div>
+        </div>
+
+        <!-- Inventory Stock Tracking -->
+        <div class="grid grid-cols-2 gap-3 border-t border-slate-100 pt-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Current Stock (Pills)</label>
+            <input type="number" id="medStock" min="0" value="30" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Low Stock Alert Level</label>
+            <input type="number" id="medLowThreshold" min="1" value="5" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <!-- Doctor Notes -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Doctor Notes / Special Guidance</label>
+          <textarea id="medNotes" rows="2" placeholder="e.g. Drink 1 full glass of water, do not crush tablet" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+          <button type="button" id="btnCancelMed" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm shadow-md transition transform active:scale-95">
+            Save Prescription
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Popup -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl z-50 text-sm flex items-center gap-2 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+    <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toastMsg">Action complete</span>
+  </div>
+
+  <footer class="mt-auto py-6 text-center text-xs text-slate-400 border-t border-slate-200 bg-white">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-slate-600">MediPulse Smart Reminder</span>
+        <span>•</span>
+        <span>Smart Audio & Web Push Engine Active</span>
+      </div>
+      <div id="footerCaregiver" class="text-slate-500">
+        Emergency / Caregiver: Not configured
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
