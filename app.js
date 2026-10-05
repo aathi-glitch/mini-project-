@@ -103,7 +103,7 @@ class MedicineTrackerApp {
     const badgeText = document.getElementById("backendBadgeText");
 
     try {
-      const res = await fetch(`${this.apiBase}/api/status`, { method: "GET" });
+      const res = await fetch(`${this.apiBase}/api/status`, { method: "POST" });
       if (res.ok) {
         const data = await res.json();
         this.isBackendOnline = true;
